@@ -1,6 +1,8 @@
-with open("12.txt", "r") as f:
+from collections import defaultdict
+
+with open("../inputs/12.txt", "r") as f:
     mat = [[c for c in line.replace("\n", "")] for line in f.readlines()]
-    
+
     res = 0
     for i in range(len(mat)):
         for j in range(len(mat[i])):
@@ -28,65 +30,25 @@ with open("12.txt", "r") as f:
                                 if (tuple(cur), tuple(next)) not in used_edges:
                                     used_edges.add((tuple(cur), tuple(next)))
                         mat[cur[0]][cur[1]] = "."
-
-
-                edges = set([(edge[0], edge[1], (edge[1][0]-edge[0][0], edge[1][1]-edge[0][1])) for edge in used_edges])
-                sides = 0
-                while len(edges) > 0:
-                    a = edges.pop()
-                    b = a
-                    added = True
-                    while added:
-                        added = False
-                        for edge in edges:
-                            if edge[2] == b[2]:
-                                if b[2] == (1, 0):
-                                    if edge[0][1]-b[0][1]==1:
-                                        b = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                    if edge[0][1]-a[0][1]==-1:
-                                        a = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                if b[2] == (-1, 0):
-                                    if edge[0][1]-b[0][1]==1:
-                                        b = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                    if edge[0][1]-a[0][1]==-1:
-                                        a = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                if b[2] == (0, 1):
-                                    if edge[0][0]-b[0][0]==1:
-                                        b = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                    if edge[0][0]-a[0][0]==-1:
-                                        a = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                if b[2] == (0,-1):
-                                    if edge[0][0]-b[0][0]==1:
-                                        b = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                                    if edge[0][0]-a[0][0]==-1:
-                                        a = edge
-                                        edges.remove(edge)
-                                        added = True
-                                        break
-                    sides += 1
-                            
-                print(sides)
-                res += len(used_edges)*len(visited)
+                mat_dict = defaultdict(bool)
+                for v in visited:
+                    mat_dict[v] = True
+                vertices = 0
+                minx = min(100000, *[v[0] for v in visited])
+                miny = min(100000, *[v[1] for v in visited])
+                maxx = max(-100000, *[v[0] for v in visited])
+                maxy = max(-100000, *[v[1] for v in visited])
+                for x in range(minx-1, maxx+1):
+                    for y in range(miny-1, maxy+1):
+                        v1 = mat_dict[(x, y)]
+                        v2 = mat_dict[(x+1, y)]
+                        v3 = mat_dict[(x, y+1)]
+                        v4 = mat_dict[(x+1, y+1)]
+                        if sum([int(v1), int(v2), int(v3), int(v4)])==1 or sum([int(v1), int(v2), int(v3), int(v4)])==3:
+                            vertices += 1
+                        if ((int(v1)+int(v4))==2 and (int(v2)+int(v3))==0) or ((int(v1)+int(v4))==0 and (int(v2)+int(v3))==2):
+                            vertices += 2
+                
+                res += vertices*len(visited)
     
     print(res)
