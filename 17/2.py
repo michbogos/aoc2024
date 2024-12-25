@@ -1,111 +1,42 @@
+import sys
 import re
 
-with open("../inputs/17.txt", "r") as f:
-    pat = re.compile(r"-*\d+")
-    a = [int(num) for num in pat.findall(f.readline())][0]
-    b = [int(num) for num in pat.findall(f.readline())][0]
-    c = [int(num) for num in pat.findall(f.readline())][0]
-    f.readline()
-    code = [int(num) for num in pat.findall(f.readline())]
-
-    res = []
+def run(program, regs):
+    a, b, c = range(4, 7)
     ip = 0
-    a = 16777217
-    while ip < len(code)-1:
-        if code[ip] == 0:
-            op1 = a
-            op2 = 0
-            if code[ip+1] <= 3:
-                op2 = code[ip+1]
-            if code[ip+1] == 4:
-                op2 = a
-            if code[ip+1] == 5:
-                op2 = b
-            if code[ip+1] == 6:
-                op2 = c
-            
-            a //= 2**op2
-            ip += 2
-        
-        elif code[ip] == 1:
-            b = (b^code[ip+1])
-            ip += 2
-        
-        elif code[ip] == 2:
-            op2 = 0
-            if code[ip+1] <= 3:
-                op2 = code[ip+1]
-            if code[ip+1] == 4:
-                op2 = a
-            if code[ip+1] == 5:
-                op2 = b
-            if code[ip+1] == 6:
-                op2 = c
-            b = op2%8
-            ip += 2
-        
-        elif code[ip] == 3:
-            if a != 0:
-                ip = code[ip+1]
-            else:
-                ip += 2
-        
-        elif code[ip] == 4:
-            b = (b^c)
-            ip += 2
-        elif code[ip] == 5:
-            op2 = 0
-            if code[ip+1] <= 3:
-                op2 = code[ip+1]
-            if code[ip+1] == 4:
-                op2 = a
-            if code[ip+1] == 5:
-                op2 = b
-            if code[ip+1] == 6:
-                op2 = c
-            
-            # print(f"{op2%8}, ")
-            print("OP2:", op2)
-            print("a:", a)
-            print("OP2:", bin(op2))
-            print("a:  ", bin(a))
-            res.append(str(op2%8))
-            ip += 2
-            # print("".join(res))
-        
-        elif code[ip] == 6:
-            op1 = a
-            op2 = 0
-            if code[ip+1] <= 3:
-                op2 = code[ip+1]
-            if code[ip+1] == 4:
-                op2 = a
-            if code[ip+1] == 5:
-                op2 = b
-            if code[ip+1] == 6:
-                op2 = c
-            
-            b = a // 2**op2
-            ip += 2
-        
-        elif code[ip] == 7:
-            op1 = a
-            op2 = 0
-            if code[ip+1] <= 3:
-                op2 = code[ip+1]
-            if code[ip+1] == 4:
-                op2 = a
-            if code[ip+1] == 5:
-                op2 = b
-            if code[ip+1] == 6:
-                op2 = c
-            
-            c = a // 2**op2
-            ip += 2
+    combo = [0, 1, 2, 3, *regs]
+    while ip < len(program):
+        opcode, operand = program[ip:ip + 2]
+        if opcode == 0:
+            combo[a] >>= combo[operand]
+        elif opcode == 1:
+            combo[b] ^= operand
+        elif opcode == 2:
+            combo[b] = combo[operand] % 8
+        elif opcode == 3:
+            if combo[a]:
+                ip = operand - 2
+        elif opcode == 4:
+            combo[b] ^= combo[c]
+        elif opcode == 5:
+            yield combo[operand] % 8
+        elif opcode == 6:
+            combo[b] = combo[a] >> combo[operand]
+        elif opcode == 7:
+            combo[c] = combo[a] >> combo[operand]
+        ip += 2
 
+def expect(program, out, prev_a=0):
+    if not out:
+        return prev_a
+    for a in range(1 << 10):
+        if a >> 3 == prev_a & 127 and next(run(program, (a, 0, 0))) == out[-1]:
+            ret = expect(program, out[:-1], (prev_a << 3) | (a % 8))
+            if ret is not None:
+                return ret
 
-    # print(a)
-    # print(b)
-    # print(c)
-    # print(code)
-    print(",".join(res))
+nums = list(map(int, re.findall(r'\d+', sys.stdin.read())))
+regs = nums[:3]
+program = nums[3:]
+print(','.join(map(str, run(program, regs))))
+print(expect(program, program))
